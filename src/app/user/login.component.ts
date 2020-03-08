@@ -1,18 +1,20 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { NgForm } from '@angular/forms';
-import { Router, ActivatedRoute } from '@angular/router';
+import { Router } from '@angular/router';
 
 import { AuthService } from './auth.service';
 import { Store, select } from '@ngrx/store';
 import { AppState } from '../state/app.state';
 import * as fromUser from './state/user.reducer';
 import * as fromUserActions from './state/user.actions';
+import { takeWhile } from 'rxjs/operators';
 
 @Component({
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.css']
 })
-export class LoginComponent implements OnInit {
+export class LoginComponent implements OnInit, OnDestroy {
+  componentActive = true;
   pageTitle = 'Log In';
   errorMessage: string;
 
@@ -24,7 +26,7 @@ export class LoginComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.store.pipe(select(fromUser.getMaskUserName)).subscribe(
+    this.store.pipe(select(fromUser.getMaskUserName), takeWhile(() => this.componentActive)).subscribe(
       maskUserName => {
         this.maskUserName = maskUserName;
       }
@@ -53,5 +55,9 @@ export class LoginComponent implements OnInit {
     } else {
       this.errorMessage = 'Please enter a user name and password.';
     }
+  }
+
+  ngOnDestroy(): void {
+    this.componentActive = false;
   }
 }
