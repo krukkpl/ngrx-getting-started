@@ -10,15 +10,13 @@ export interface AppState extends fromRoot.AppState {
 
 export interface ProductState {
   showProductCode: boolean;
-  currentProduct: Product;
-  currentProductId: number;
+  currentProductId: number | null;
   products: Product[];
   error: string;
 }
 
 const initialState: ProductState = {
   showProductCode: true,
-  currentProduct: null,
   currentProductId: null,
   products: [],
   error: ''
@@ -27,12 +25,21 @@ const initialState: ProductState = {
 const getProductFeatureState = createFeatureSelector<ProductState>('products');
 
 export const getShowProductCode = createSelector(getProductFeatureState, productState => productState.showProductCode);
-export const getCurrentProduct = createSelector(getProductFeatureState, productState => productState.currentProduct);
 export const getCurrentProductId = createSelector(getProductFeatureState, productState => productState.currentProductId);
 export const getProducts = createSelector(getProductFeatureState, productState => productState.products);
 export const getError = createSelector(getProductFeatureState, productState => productState.error);
-export const getCurrentProductById = createSelector(getProducts, getCurrentProductId, (products, currentProductId) => {
-  return products.find(p => p.id === currentProductId);
+export const getCurrentProduct = createSelector(getProducts, getCurrentProductId, (products, currentProductId) => {
+  if (currentProductId === 0) {
+    return {
+      id: 0,
+      productName: '',
+      productCode: 'New',
+      description: '',
+      starRating: 0
+    };
+  } else {
+    return currentProductId ? products.find(p => p.id === currentProductId) : null;
+  }
 });
 
 export function reducer(state: ProductState = initialState, action: ProductActions): ProductState {
@@ -45,23 +52,17 @@ export function reducer(state: ProductState = initialState, action: ProductActio
     case ProductActionTypes.SetCurrentProduct:
       return {
         ...state,
-        currentProduct: { ...action.product }
+        currentProductId: action.product.id
       };
     case ProductActionTypes.ClearCurrentProduct:
       return {
         ...state,
-        currentProduct: null
+        currentProductId: null
       };
     case ProductActionTypes.InitializeCurrentProduct:
       return {
         ...state,
-        currentProduct: {
-          id: 0,
-          productName: '',
-          productCode: 'New',
-          description: '',
-          starRating: 0
-        }
+        currentProductId: 0
       };
     case ProductActionTypes.LoadSuccess:
       return {
@@ -69,12 +70,25 @@ export function reducer(state: ProductState = initialState, action: ProductActio
         products: action.products,
         error: ''
       };
-      case ProductActionTypes.LoadFail:
-        return {
-          ...state,
-          products: [],
-          error: action.errorMessage
-        };
+    case ProductActionTypes.LoadFail:
+      return {
+        ...state,
+        products: [],
+        error: action.errorMessage
+      };
+    case ProductActionTypes.UpdateProductSuccess:
+      const updatedProducts = state.products.map(item => item.id === action.product.id ? action.product : item);
+      return {
+        ...state,
+        products: updatedProducts,
+        currentProductId: action.product.id,
+        error: ''
+      };
+    case ProductActionTypes.UpdateProductFail:
+      return {
+        ...state,
+        error: action.errorMessage
+      };
     default:
       return state;
   }
