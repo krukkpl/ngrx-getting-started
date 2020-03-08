@@ -1,8 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-
 import { Product } from '../product';
-import { ProductService } from '../product.service';
 import { Store, select } from '@ngrx/store';
+import { takeWhile } from 'rxjs/operators';
 import * as fromProduct from '../state/products.reducer';
 import * as productActions from '../state/product.actions';
 
@@ -12,6 +11,7 @@ import * as productActions from '../state/product.actions';
   styleUrls: ['./product-list.component.css']
 })
 export class ProductListComponent implements OnInit, OnDestroy {
+  componentActive = true;
   pageTitle = 'Products';
   errorMessage: string;
 
@@ -22,29 +22,35 @@ export class ProductListComponent implements OnInit, OnDestroy {
   // Used to highlight the selected product in the list
   selectedProduct: Product | null;
 
-  constructor(private productService: ProductService,
-              private store: Store<fromProduct.AppState>) {
+  constructor(private store: Store<fromProduct.AppState>) {
   }
 
   ngOnInit(): void {
-    this.store.pipe(select(fromProduct.getCurrentProduct)).subscribe(
+    this.store.pipe(select(fromProduct.getCurrentProduct), takeWhile(() => this.componentActive)).subscribe(
       currentProduct => this.selectedProduct = currentProduct
     );
 
-    this.productService.getProducts().subscribe({
-      next: (products: Product[]) => this.products = products,
-      error: (err: any) => this.errorMessage = err.error
-    });
+    this.store.dispatch(new productActions.Load());
 
-    // TODO: unsubscribe
-    this.store.pipe(select(fromProduct.getShowProductCode)).subscribe(
+    this.store.pipe(select(fromProduct.getProducts), takeWhile(() => this.componentActive)).subscribe(
+      products => this.products = products
+    );
+
+    this.store.pipe(select(fromProduct.getShowProductCode), takeWhile(() => this.componentActive)).subscribe(
       showProductCode => {
         this.displayCode = showProductCode;
       }
-    )
+    );
+
+    this.store.pipe(select(fromProduct.getError), takeWhile(() => this.componentActive)).subscribe(
+      error => {
+        this.errorMessage = error;
+      }
+    );
   }
 
   ngOnDestroy(): void {
+    this.componentActive = false;
   }
 
   checkChanged(value: boolean): void {
@@ -58,5 +64,4 @@ export class ProductListComponent implements OnInit, OnDestroy {
   productSelected(product: Product): void {
     this.store.dispatch(new productActions.SetCurrentProduct(product));
   }
-
 }
