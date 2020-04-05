@@ -68,6 +68,16 @@ export function reducer(state: ProductState = initialState, action: ProductActio
         ...state,
         error: action.errorMessage
       };
+      case ProductActionTypes.DeleteProductSuccess:
+        return {
+          ...state,
+          products: [ ...state.products.filter(x => x.id !== action.productId)],
+        };
+      case ProductActionTypes.DeleteProductFail:
+        return {
+          ...state,
+          error: action.errorMessage
+        };
     default:
       return state;
   }

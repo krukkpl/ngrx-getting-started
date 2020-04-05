@@ -26,7 +26,7 @@ export class ProductEffects {
     ofType(productActions.ProductActionTypes.UpdateProduct),
     mergeMap((action: productActions.UpdateProduct) => this.productService.updateProduct(action.product).pipe(
       map((product: Product) => new productActions.UpdateProductSuccess(product)),
-      catchError(error => of(new productActions.LoadFail(error)))
+      catchError(error => of(new productActions.UpdateProductFail(error)))
     ))
   );
 
@@ -35,7 +35,16 @@ export class ProductEffects {
     ofType(productActions.ProductActionTypes.AddProduct),
     mergeMap((action: productActions.AddProduct) => this.productService.addProduct(action.product).pipe(
       map((product: Product) => new productActions.AddProductSuccess(product)),
-      catchError(error => of(new productActions.LoadFail(error)))
+      catchError(error => of(new productActions.AddProductFail(error)))
+    ))
+  );
+
+  @Effect()
+  deleteProduct$ = this.actions$.pipe(
+    ofType(productActions.ProductActionTypes.DeleteProduct),
+    mergeMap((action: productActions.DeleteProduct) => this.productService.deleteProduct(action.productId).pipe(
+      map(() => new productActions.DeleteProductSuccess(action.productId)),
+      catchError(error => of(new productActions.DeleteProductFail(error)))
     ))
   );
 }

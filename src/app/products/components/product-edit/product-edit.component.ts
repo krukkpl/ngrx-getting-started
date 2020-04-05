@@ -1,14 +1,14 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
-import { Product } from '../product';
-import { ProductService } from '../product.service';
-import { GenericValidator } from '../../shared/generic-validator';
-import { NumberValidators } from '../../shared/number.validator';
+import { Product } from '../../product';
+import { ProductService } from '../../product.service';
+import { GenericValidator } from '../../../shared/generic-validator';
+import { NumberValidators } from '../../../shared/number.validator';
 
 import { Store, select } from '@ngrx/store';
-import * as fromProduct from '../state';
-import * as productActions from '../state/product.actions';
+import * as fromProduct from '../../state';
+import * as productActions from '../../state/product.actions';
 
 @Component({
   selector: 'pm-product-edit',
@@ -17,9 +17,9 @@ import * as productActions from '../state/product.actions';
 })
 export class ProductEditComponent implements OnInit, OnDestroy {
   pageTitle = 'Product Edit';
-  errorMessage = '';
   productForm: FormGroup;
 
+  errorMessage = '';
   product: Product | null;
 
   // Use with the generic validation message class
@@ -116,10 +116,7 @@ export class ProductEditComponent implements OnInit, OnDestroy {
   deleteProduct(): void {
     if (this.product && this.product.id) {
       if (confirm(`Really delete the product: ${this.product.productName}?`)) {
-        this.productService.deleteProduct(this.product.id).subscribe({
-          next: () => this.store.dispatch(new productActions.ClearCurrentProduct()),
-          error: err => this.errorMessage = err.error
-        });
+        this.store.dispatch(new productActions.DeleteProduct(this.product.id));
       }
     } else {
       // No need to delete, it was never saved
@@ -130,22 +127,11 @@ export class ProductEditComponent implements OnInit, OnDestroy {
   saveProduct(): void {
     if (this.productForm.valid) {
       if (this.productForm.dirty) {
-        // Copy over all of the original product properties
-        // Then copy over the values from the form
-        // This ensures values not on the form, such as the Id, are retained
         const p = { ...this.product, ...this.productForm.value };
 
         if (p.id === 0) {
-          // this.productService.addProduct(p).subscribe({
-          //   next: product => this.store.dispatch(new productActions.SetCurrentProduct(product)),
-          //   error: err => this.errorMessage = err.error
-          // });
           this.store.dispatch(new productActions.AddProduct(p));
         } else {
-          // this.productService.updateProduct(p).subscribe({
-          //   next: product => this.store.dispatch(new productActions.SetCurrentProduct(product)),
-          //   error: err => this.errorMessage = err.error
-          // });
           this.store.dispatch(new productActions.UpdateProduct(p));
         }
       }
